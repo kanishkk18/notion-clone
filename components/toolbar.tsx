@@ -1,19 +1,31 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { ImageIcon, Smile, X } from "lucide-react";
 import React, { type ElementRef, useRef, useState } from "react";
 import TextareaAutoSize from "react-textarea-autosize";
+import { useRouter } from "next/router";
 
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
-import type { Doc } from "@/convex/_generated/dataModel";
 import { useCoverImage } from "@/hooks/use-cover-image";
 
 import { IconPicker } from "./icon-picker";
 
+type Document = {
+  id: string
+  title: string
+  content?: string
+  coverImage?: string
+  icon?: string
+  isArchived: boolean
+  isPublished: boolean
+  userId: string
+  parentId?: string
+  createdAt: string
+  updatedAt: string
+}
+
 type ToolbarProps = {
-  initialData: Doc<"documents">;
+  initialData: Document;
   preview?: boolean;
 };
 
@@ -21,9 +33,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   const inputRef = useRef<ElementRef<"textarea">>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialData.title);
-
-  const update = useMutation(api.documents.update);
-  const removeIcon = useMutation(api.documents.removeIcon);
+  const router = useRouter();
 
   const coverImage = useCoverImage();
 
@@ -40,12 +50,20 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
 
   const disableInput = () => setIsEditing(false);
 
-  const onInput = (value: string) => {
+  const onInput = async (value: string) => {
     setValue(value);
-    update({
-      id: initialData._id,
-      title: value || "Untitled",
-    });
+    
+    try {
+      await fetch(`/api/documents/${initialData.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: value || "Untitled" }),
+      });
+    } catch (error) {
+      console.error('Failed to update title:', error);
+    }
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -55,17 +73,32 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
     }
   };
 
-  const onIconSelect = (icon: string) => {
-    update({
-      id: initialData._id,
-      icon,
-    });
+  const onIconSelect = async (icon: string) => {
+    try {
+      await fetch(`/api/documents/${initialData.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ icon }),
+      });
+    } catch (error) {
+      console.error('Failed to update icon:', error);
+    }
   };
 
-  const onRemoveIcon = () => {
-    removeIcon({
-      id: initialData._id,
-    });
+  const onRemoveIcon = async () => {
+    try {
+      await fetch(`/api/documents/${initialData.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ icon: null }),
+      });
+    } catch (error) {
+      console.error('Failed to remove icon:', error);
+    }
   };
 
   return (

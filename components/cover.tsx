@@ -1,14 +1,11 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { ImageIcon, X } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/router";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { useCoverImage } from "@/hooks/use-cover-image";
 import { useEdgeStore } from "@/lib/edgestore";
 import { cn } from "@/lib/utils";
@@ -20,9 +17,8 @@ type CoverProps = {
 
 export const Cover = ({ url, preview }: CoverProps) => {
   const { edgestore } = useEdgeStore();
-  const params = useParams();
+  const router = useRouter();
   const coverImage = useCoverImage();
-  const removeCoverImage = useMutation(api.documents.removeCoverImage);
 
   const onRemove = async () => {
     if (url) {
@@ -31,9 +27,17 @@ export const Cover = ({ url, preview }: CoverProps) => {
       });
     }
 
-    removeCoverImage({
-      id: params.documentId as Id<"documents">,
-    });
+    try {
+      await fetch(`/api/documents/${router.query.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ coverImage: null }),
+      });
+    } catch (error) {
+      console.error('Failed to remove cover image:', error);
+    }
   };
 
   return (

@@ -1,19 +1,15 @@
 "use client";
 
-import { useMutation } from "convex/react";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/router";
 import { useState } from "react";
 
 import { SingleImageDropzone } from "@/components/single-image-dropzone";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { useCoverImage } from "@/hooks/use-cover-image";
 import { useEdgeStore } from "@/lib/edgestore";
 
 export const CoverImageModal = () => {
-  const params = useParams();
-  const update = useMutation(api.documents.update);
+  const router = useRouter();
   const coverImage = useCoverImage();
   const { edgestore } = useEdgeStore();
 
@@ -39,10 +35,17 @@ export const CoverImageModal = () => {
       },
     });
 
-    await update({
-      id: params.documentId as Id<"documents">,
-      coverImage: res.url,
-    });
+    try {
+      await fetch(`/api/documents/${router.query.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ coverImage: res.url }),
+      });
+    } catch (error) {
+      console.error('Failed to update cover image:', error);
+    }
 
     onClose();
   };

@@ -1,9 +1,8 @@
 "use client";
 
-import { useUser } from "@clerk/clerk-react";
-import { useQuery } from "convex/react";
+import { useSession } from 'next-auth/react'
 import { File } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import {
@@ -14,13 +13,18 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { api } from "@/convex/_generated/api";
 import { useSearch } from "@/hooks/use-search";
 
+type Document = {
+  id: string
+  title: string
+  icon?: string
+}
+
 export const SearchCommand = () => {
-  const { user } = useUser();
+  const { data: session } = useSession()
   const router = useRouter();
-  const documents = useQuery(api.documents.getSearch);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
   const toggle = useSearch((store) => store.toggle);
@@ -30,6 +34,24 @@ export const SearchCommand = () => {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await fetch('/api/documents/search');
+        if (response.ok) {
+          const docs = await response.json();
+          setDocuments(docs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchDocuments();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -53,14 +75,14 @@ export const SearchCommand = () => {
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>
-      <CommandInput placeholder={`Search ${user?.fullName}'s Jotion...`} />
+      <CommandInput placeholder={`Search ${session?.user?.name}'s Jotion...`} />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Documents">
           {documents?.map((document) => (
             <CommandItem
-              key={document._id}
-              value={document._id}
+              key={document.id}
+              value={document.id}
               title={document.title}
               onSelect={onSelect}
             >
