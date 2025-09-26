@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { toast } from 'sonner'
 import { authOptions } from '../api/auth/[...nextauth]'
+import { isTestMode } from '@/lib/default-user'
 import { Cover } from '@/components/cover'
 import { Toolbar } from '@/components/toolbar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -135,7 +136,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions)
   const { id } = context.params!
 
-  if (!session) {
+  if (!session && !isTestMode) {
     return {
       redirect: {
         destination: '/',

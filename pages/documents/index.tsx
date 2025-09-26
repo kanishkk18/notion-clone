@@ -73,7 +73,7 @@ export default function DocumentsPage() {
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions)
 
-  if (!session) {
+  if (!session && !isTestMode) {
     return {
       redirect: {
         destination: '/',

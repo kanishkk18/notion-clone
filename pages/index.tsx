@@ -1,6 +1,7 @@
 import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from './api/auth/[...nextauth]'
+import { isTestMode } from '@/lib/default-user'
 import { Footer } from '@/components/marketing/footer'
 import { Heading } from '@/components/marketing/heading'
 import { Heros } from '@/components/marketing/heros'
@@ -26,7 +27,8 @@ export default function MarketingPage() {
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions)
 
-  if (session) {
+  // In test mode, always redirect to documents
+  if (session || isTestMode) {
     return {
       redirect: {
         destination: '/documents',

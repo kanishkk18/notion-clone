@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { DEFAULT_USER, isTestMode } from '@/lib/default-user'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -54,12 +55,31 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      // In test mode, use default user
+      if (isTestMode && !token.id) {
+        token.id = DEFAULT_USER.id
+        token.name = DEFAULT_USER.name
+        token.email = DEFAULT_USER.email
+        token.picture = DEFAULT_USER.image
+      }
+      
       if (user) {
         token.id = user.id
       }
       return token
     },
     async session({ session, token }) {
+      // In test mode, use default user
+      if (isTestMode) {
+        session.user = {
+          id: DEFAULT_USER.id,
+          name: DEFAULT_USER.name,
+          email: DEFAULT_USER.email,
+          image: DEFAULT_USER.image,
+        }
+        return session
+      }
+      
       if (token) {
         session.user.id = token.id as string
       }
